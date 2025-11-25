@@ -5,8 +5,10 @@ int main()
 {
     int number = 0;
     unsigned char third_byte = 0;
+
     printf("The original number: ");
     scanf("%d", &number);
+    
     printf("The third byte: ");
     scanf(" %hhu", &third_byte);
 
