@@ -8,7 +8,7 @@ void printBinary(unsigned int number)
         return;
     }
 
-    unsigned int temp = 1;
+    int temp = 1;
     while (temp <= number/2) 
     {
         temp <<= 1; 
@@ -30,12 +30,17 @@ void printBinary(unsigned int number)
     printf("\n");
 }
 
-//Вывести двоичное представление целого положительного числа, используя битовые операции (число вводится с клавиатуры).
+// Вывести двоичное представление целого положительного числа, используя битовые операции (число вводится с клавиатуры).
 int main() 
 {
-    unsigned int number;
+    int number = 0;
     scanf("%d", &number);
-    printBinary(number);
 
+    if (number < 0)
+    {
+        printf("The number must be positive\n");
+        return 0;
+    }
+    printBinary(number);
     return 0;
 }

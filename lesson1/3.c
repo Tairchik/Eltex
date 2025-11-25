@@ -17,7 +17,7 @@ int main()
 {
     unsigned int number;
 
-    scanf("%d", &number);
+    scanf("%u", &number);
     int count = CountUnits(number);
 
     printf("%d\n", count);

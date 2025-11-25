@@ -2,13 +2,7 @@
 
 void printBinary(int number)
 {
-    if (number == 0) 
-    {
-        printf("0\n");
-        return;
-    }
-
-    unsigned int temp = 0x80000000;
+    unsigned int temp = 1U << 31;
     while (temp > 0) 
     {
         if (number & temp) 
@@ -25,11 +19,18 @@ void printBinary(int number)
     printf("\n");
 }
 
-//Вывести двоичное представление целого отрицательного числа, используя битовые операции (число вводится с клавиатуры).
+// Вывести двоичное представление целого отрицательного числа, используя битовые операции (число вводится с клавиатуры).
 int main() 
 {
-    int number;
+    int number = 0;
     scanf("%d", &number);
+
+    if (number > 0) 
+    {
+        printf("The number must be negative\n");
+        return 0;
+    }
+
     printBinary(number);
 
     return 0;
