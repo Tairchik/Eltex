@@ -9,8 +9,7 @@ int CountUnits(unsigned int number)
         count += number & 1;
         number >>= 1; 
     }
-
-    printf("\n");
+    return count;
 }
 
 // Найти количество единиц в двоичном представлении целого положительного числа (число вводится с клавиатуры).
@@ -21,5 +20,6 @@ int main()
     scanf("%d", &number);
     int count = CountUnits(number);
 
+    printf("%d\n", count);
     return 0;
 }
