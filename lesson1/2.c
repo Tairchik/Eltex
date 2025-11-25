@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-void printBinary(unsigned int number)
+void printBinary(int number)
 {
     if (number == 0) 
     {
@@ -8,14 +8,7 @@ void printBinary(unsigned int number)
         return;
     }
 
-    number = ~number+1;
-
-    int temp = 1;
-    while (temp <= number/2) 
-    {
-        temp <<= 1; 
-    }
-
+    unsigned int temp = 0x80000000;
     while (temp > 0) 
     {
         if (number & temp) 
