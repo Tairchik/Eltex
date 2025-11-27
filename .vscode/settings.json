@@ -2,6 +2,7 @@
     "files.associations": {
         "*.html": "django-html",
         "cstddef": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "array": "c"
     }
 }
