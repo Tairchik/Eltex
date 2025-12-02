@@ -1,5 +1,5 @@
 #include <stdio.h> 
-
+#define N 10 
 
 /*
 Напишите программу, в которой определите массив типа int (размер
@@ -9,5 +9,12 @@
 */
 int main()
 {
+    int arr[N] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    int *ptr = arr;
+    for (int i = 0; i < N; i++)
+    {
+        printf("%d ", *ptr);
+        ptr += 1;
+    }
     return 0;
 }
