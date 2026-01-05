@@ -58,7 +58,7 @@ int delete(struct abonent dir[N], int *len, int delete_buf[])
     }
     
     int c = 0;
-    while (1)
+    while (c < *len)
     {
         if (delete_buf[c] == num) 
         {
@@ -165,7 +165,7 @@ int main()
     int choice = 0;
     struct abonent directory[N];
     int len_directory = 0;
-    int delete_buf[N];
+    int delete_buf[N] = {0};
 
     while (1)
     {
