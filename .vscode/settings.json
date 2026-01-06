@@ -3,6 +3,8 @@
         "*.html": "django-html",
         "cstddef": "c",
         "stdio.h": "c",
-        "array": "c"
+        "array": "c",
+        "typeinfo": "c",
+        "stdlib.h": "c"
     }
 }
