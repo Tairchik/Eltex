@@ -19,7 +19,7 @@ struct elementList
     struct elementList* prev;    
 };
 
-void createList(struct list* collection);
+struct list* createList();
 void add(struct list* collection, struct subscriber data); // Добавить в список
 int pop(struct list* collection, char tel[]); // Удалить из списка по номеру телефона
 struct subscriber* find(struct list* collection, char tel[]); // Поиск элемента по номеру телефона

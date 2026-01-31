@@ -5,11 +5,14 @@
 
 
 // Инициализировать список
-void createList(struct list* collection) 
+struct list*  createList() 
 {
+    struct list* collection = malloc(sizeof(struct list));
+    if (collection == NULL) return NULL;
     collection->head = NULL;
     collection->tail = NULL;
     collection->size = 0;
+    return collection;
 }
 
 
@@ -99,7 +102,7 @@ struct subscriber* find(struct list* collection, char tel[])
         }
         temp = temp->next;
     }
-    printf("The subscriber was not found.\n", tel);
+    printf("The subscriber was not found.\n");
     return NULL;
 }
 
@@ -107,11 +110,13 @@ void freeAll(struct list* collection)
 {
     if (collection->head == NULL)
     {
+        free(collection);
         return;
     }
     if (collection->head->next == NULL)
     {
         free(collection->head);
+        free(collection);
         return;
     } 
 
@@ -124,4 +129,6 @@ void freeAll(struct list* collection)
         free(head);
         head = temp;
     }
+
+    free(collection);
 }

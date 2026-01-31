@@ -39,7 +39,7 @@ void delete(struct list* list)
     while(getchar() != '\n');
 
     char phone[10];
-    printf("Enter the serial phone number to find: ");
+    printf("Enter the serial phone number to delete: ");
     scanf("%9s", phone); 
 
     if (pop(list, phone) == 1)
@@ -85,8 +85,11 @@ void findMenu(struct list* list)
 int main()
 {
     int choice = 0;
-    struct list* list;
-    createList(list);
+    struct list* list = createList();
+    if (list == NULL) 
+    {
+        return -1;
+    }
     while (1)
     {
         printMenu();
