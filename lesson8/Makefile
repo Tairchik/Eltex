@@ -3,6 +3,8 @@ CC = gcc
 
 all: library
 	$(CC) main.c -o program -L. -lcalc
+
+run: all
 	LD_LIBRARY_PATH=$$PWD:$$LD_LIBRARY_PATH ./program
 
 library: calc.h div.c add.c mul.c sub.c
