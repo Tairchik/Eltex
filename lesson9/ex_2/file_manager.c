@@ -34,7 +34,7 @@ Files* getFilesInfo(char* path)
     char *check_root = realpath(path, NULL);
     if (!check_root) 
     {
-        perror("getFilesInfo: check_root");
+        //perror("getFilesInfo: check_root");
         return NULL;
     }
 
@@ -52,7 +52,7 @@ Files* getFilesInfo(char* path)
 
     if (n == -1) 
     {
-        perror("getFilesInfo: n");
+        //perror("getFilesInfo: n");
         return NULL;
     }
 
@@ -88,7 +88,7 @@ int changeDir(Files** files, char* path)
 {
     if (!files || !*files || !path) 
     {
-        perror("changeDir: invalid arguments");
+        //perror("changeDir: invalid arguments");
         return -1;
     }
 
@@ -98,7 +98,7 @@ int changeDir(Files** files, char* path)
         full_path = malloc(strlen(path) + 1);
         if (!full_path) {
             free(full_path);
-            perror("changeDir: malloc full_path");
+            //perror("changeDir: malloc full_path");
             return -1;
         }
         strcpy(full_path, path);
@@ -110,7 +110,7 @@ int changeDir(Files** files, char* path)
         if (!full_path) 
         {
             free(full_path);
-            perror("changeDir: malloc full_path");
+            //perror("changeDir: malloc full_path");
             return -1;
         }
         snprintf(full_path, needed, "%s/%s", (*files)->current_path, path);
@@ -122,7 +122,7 @@ int changeDir(Files** files, char* path)
     if (!shortcut) 
     {
         free(shortcut);
-        perror("changeDir: shortcut");
+        //perror("changeDir: shortcut");
         return -1;
     }
 
@@ -130,7 +130,7 @@ int changeDir(Files** files, char* path)
     if (!newData) 
     {
         free(shortcut);
-        perror("changeDir: newData");
+        //perror("changeDir: newData");
         return -1;
     } 
     freeFiles(*files);
