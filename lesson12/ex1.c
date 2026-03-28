@@ -22,32 +22,32 @@ int main()
     fr = fork();
     switch (fr)
     {
-    case -1:
-        exit(EXIT_FAILURE);
-        break;
-    case 0:
-        // Ребенок
-        close(fd[1]);
-        char b;
-        printf("Message from parent: ");
-        while (read(fd[0], &b, 1) > 0 && b != '\0')
-        {
-            printf("%c", b);            
-        }
-        printf("\n");
-        close(fd[0]);
-        exit(EXIT_SUCCESS);
-        break;
+        case -1:
+            exit(EXIT_FAILURE);
+            break;
+        case 0:
+            // Ребенок
+            close(fd[1]);
+            char b;
+            printf("Message from parent: ");
+            while (read(fd[0], &b, 1) > 0 && b != '\0')
+            {
+                printf("%c", b);            
+            }
+            printf("\n");
+            close(fd[0]);
+            exit(EXIT_SUCCESS);
+            break;
 
-    default:
-        // Родитель
-        close(fd[0]);
-        char *message_in = "Hi";
-        write(fd[1], message_in, strlen(message_in) + 1);
+        default:
+            // Родитель
+            close(fd[0]);
+            char *message_in = "Hi";
+            write(fd[1], message_in, strlen(message_in) + 1);
 
-        wait(NULL);
-        close(fd[1]);
-        break;
+            wait(NULL);
+            close(fd[1]);
+            break;
     }
 
     exit(EXIT_SUCCESS);    
