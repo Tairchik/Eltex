@@ -7,62 +7,112 @@
 #include <limits.h>
 #include "shell.h"
 
-#define TOKEN_DELIM " \n\t\r\a" 
+#define TOKEN_DELIM " \n\t\r\a"
 
-
-int sh_launch(char **args)
+int sh_launch(char ***args)
 {
-    pid_t pid, wpid;
-    int status;
-
-    pid = fork();
-
-    switch (pid)
+    int i = 0, input_fd = 0;
+    while (args[i] != NULL)
     {
-        case -1:
-            perror("sh_launch: fork");
-            break;
-        case 0:
-            if (execvp(args[0], args) == -1) 
+        pid_t pid;
+        int fd[2];
+        if (args[i + 1] != NULL)
+        {
+            if (pipe(fd) == -1)
             {
-                perror("sh_launch: execvp");
+                perror("pipe");
+                return 1;
             }
-            break;
-        default:
-            // Нужно, если процесс приостановлен - синхронизация ожидания
-            do 
-            {
-                wpid = waitpid(pid, &status, WUNTRACED); 
-            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-            break;
-    }
+        }
+        pid = fork();
 
+        if (pid == -1)
+        {
+            perror("fork");
+            return 1;       
+        }
+        else if (pid == 0)
+        {
+            if (args[i + 1] == NULL) // выполняем команду в конце
+            {
+                dup2(input_fd, STDIN_FILENO); // читаем из входа предыдущего пайпа или STDIN_FILENO, стандартный поток вывода не трогаем
+                close(input_fd);
+                if (execvp(args[i][0], args[i]) == -1) 
+                {
+                    perror("execvp");
+                    exit(EXIT_FAILURE);
+                }    
+            }
+            else if (i == 0) // выполняем камнду в начале
+            {
+                close(fd[0]);
+                dup2(fd[1], STDOUT_FILENO); // чтение не трогаем, а запись меняем на выход текущего пайпа
+                close(fd[1]);
+                if (execvp(args[i][0], args[i]) == -1) 
+                {
+                    perror("execvp");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else // выполняем команду в середине
+            {
+                close(fd[0]);
+                dup2(input_fd, STDIN_FILENO); // читаем из входа предыдущего пайпа
+                dup2(fd[1], STDOUT_FILENO); // записываем в ввод текущего пайпа
+                close(input_fd);
+                close(fd[1]);
+                if (execvp(args[i][0], args[i]) == -1) 
+                {
+                    perror("execvp");
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }
+        else
+        {
+            if (i != 0)
+            {
+                close(input_fd);
+            }
+            if (args[i + 1] != NULL)
+            {
+                close(fd[1]);
+                input_fd = fd[0]; // запоминаем ввод предыдущего пайпа
+            }
+        }
+        i++;
+    }
+    for (int j = 0; j < i; j++)
+    {
+        wait(NULL);
+    }
     return 1;
 }
 
-int sh_read_command(char** command_out)
+
+int sh_read_command(char **command_out)
 {
     int size_str = 32;
-    char* str = calloc(sizeof(char), size_str);
+    char *str = calloc(sizeof(char), size_str);
 
     if (!str)
     {
-        perror("readCommand: calloc str");
+        perror("calloc str");
         return -1;
     }
 
     int ch;
     int i = 0;
-    while(EOF != (ch = fgetc(stdin)) && ch != '\n')
+    while (EOF != (ch = fgetc(stdin)) && ch != '\n')
     {
-        str[i]=ch;
-        if(i + 2 >= size_str)
+        str[i] = ch;
+        if (i + 2 >= size_str)
         {
             size_str += 32;
-            char* temp = realloc(str, sizeof(char) * size_str);
+            char *temp = realloc(str, sizeof(char) * size_str);
             if (!temp)
             {
-                perror("readCommand: realloc temp");
+                perror("realloc temp");
                 free(str);
                 return -1;
             }
@@ -70,40 +120,138 @@ int sh_read_command(char** command_out)
         }
         i++;
     }
-    
-    str[i] = '\0'; 
+
+    str[i] = '\0';
     *command_out = str;
     return i;
 }
 
-// Разбивает строку на токены (лексемы)
-char** sh_parse_command(char* command)
+char *expand_pipes(const char *input)
 {
-    char ch;
-    int size_args = 64;
-    char** args = malloc(size_args * sizeof(char*));
-    int pos = 0, start_pos = 0;
-    
-    if(!args)
+    int count_pipes = 0;
+    for (int i = 0; input[i] != '\0'; i++)
     {
-        perror("sh_parse_command: args malloc");
+        if (input[i] == '|')
+            count_pipes++;
+    }
+    char *output = malloc(strlen(input) + count_pipes * 3 + 1);
+    if (!output)
+        return NULL;
+
+    int j = 0;
+    for (int i = 0; input[i] != '\0'; i++)
+    {
+        if (input[i] == '|')
+        {
+            output[j++] = ' ';
+            output[j++] = '|';
+            output[j++] = ' ';
+        }
+        else
+        {
+            output[j++] = input[i];
+        }
+    }
+    output[j] = '\0';
+    return output;
+}
+
+// Разбивает строку на токены (лексемы)
+char ***sh_parse_command(char **command)
+{
+    char *prepared_cmd = expand_pipes(*command);
+    if (!prepared_cmd)
+        return NULL;
+
+    int size_args_array = 16, pos_args_arr = 0;
+    char ***array_args = malloc(size_args_array * sizeof(char **));
+
+    if (!array_args)
+    {
+        perror("malloc");
+        free(prepared_cmd);
         return NULL;
     }
 
-    char* token = strtok(command, TOKEN_DELIM);
-    while (token != NULL) 
+    char *token;
+    int pos = 0, size_args = 64;
+    char **args = malloc(size_args * sizeof(char *));
+
+    if (!args)
     {
+        perror("malloc");
+        free(prepared_cmd);
+        free(array_args);
+        return NULL;
+    }
+
+    token = strtok(prepared_cmd, TOKEN_DELIM);
+    while (token != NULL)
+    {
+        // Увеличиваем array_args, если не хватает размера
+        if (pos_args_arr >= size_args_array - 2) // -2 чтобы не пришлось увеличивать массив после выхода из while
+        {
+            size_args_array += 16;
+            char ***temp = realloc(array_args, size_args_array * sizeof(char **));
+            if (!temp)
+            {
+                perror("realloc");
+                while (pos_args_arr >= 0)
+                {
+                    free(array_args[pos_args_arr]);
+                    pos_args_arr--;
+                }
+                free(array_args);
+                free(prepared_cmd);
+                return NULL;
+            }
+            array_args = temp;
+        }
+        // Новая команда, записываем в array_args и создаем новый args
+        if (strcmp(token, "|") == 0)
+        {
+            args[pos] = NULL;
+            array_args[pos_args_arr] = args;
+            pos = 0;
+            pos_args_arr++;
+
+            size_args = 64;
+            args = malloc(size_args * sizeof(char *));
+            if (!args)
+            {
+                perror("malloc");
+                while (pos_args_arr > 0)
+                {
+                    free(array_args[pos_args_arr - 1]);
+                    pos_args_arr--;
+                }
+                free(array_args);
+                free(prepared_cmd);
+                return NULL;
+            }
+            token = strtok(NULL, TOKEN_DELIM);
+            continue;
+        }
+
         args[pos] = token;
         pos++;
-
-        if (pos >= size_args) 
+        // Увеличиваем args, если не хватает размера
+        if (pos >= size_args - 1)
         {
             size_args += 64;
-            char** temp = realloc(args, size_args * sizeof(char*));
-            if (!temp) 
+            char **temp = realloc(args, size_args * sizeof(char *));
+
+            if (!temp)
             {
-                perror("sh_parse_command: realloc");
+                perror("realloc");
+                while (pos_args_arr > 0)
+                {
+                    free(array_args[pos_args_arr - 1]);
+                    pos_args_arr--;
+                }
+                free(array_args);
                 free(args);
+                free(prepared_cmd);
                 return NULL;
             }
             args = temp;
@@ -111,21 +259,24 @@ char** sh_parse_command(char* command)
 
         token = strtok(NULL, TOKEN_DELIM);
     }
+    args[pos] = NULL;
+    array_args[pos_args_arr] = args;
+    array_args[pos_args_arr + 1] = NULL;
 
-    args[pos] = NULL; // Как символ конца массива указателей
-
-    return args;
+    free(*command);
+    *command = prepared_cmd; 
+    return array_args;
 }
 
-int sh_cd(char** args)
+int sh_cd(char **args)
 {
-    if (args[1] == NULL) 
+    if (args[1] == NULL)
     {
         fprintf(stderr, "sh_cd: waiting argument for \"cd\"\n");
-    } 
-    else 
+    }
+    else
     {
-        if (chdir(args[1]) != 0) 
+        if (chdir(args[1]) != 0)
         {
             perror("sh_cd: chdir");
         }
@@ -134,40 +285,43 @@ int sh_cd(char** args)
 }
 
 // Выполнение команд
-int sh_perfom_cmd(char** args)
+int sh_perfom_cmd(char ***args)
 {
-    if (args[0] == NULL) 
+    int i = 0;
+    while (args[i] != NULL)
     {
-        return 1;
+        if (args[i][0] == NULL)
+        {
+            return 1;
+        }
+        i++;
     }
-    else if (strcmp("exit", args[0]) == 0)
+    if (i == 1)
     {
-        return 0;
+        if (strcmp("exit", args[0][0]) == 0)
+        {
+            return 0;
+        }
+        else if (strcmp("cd", args[0][0]) == 0)
+        {
+            return sh_cd(args[0]);
+        }
     }
-    else if (strcmp("cd", args[0]) == 0)
-    {
-        // Отдельная реализация для смены директории, т.к
-        // если делегировать это дочернему процессу, 
-        // то изменения остануться только в нем, а значит в 
-        // реальности пользователь будет в директории, которая была изначально
-        // сохранена в родительском процессе
-        return sh_cd(args);
-    }
+   
     return sh_launch(args);
 }
 
 int sh_start()
 {
-    char* cmd;
+    char *cmd;
     int size_command;
-    char** args;
+    char ***args;
     int res_perform = 1;
-    char* cwd;
 
     while (res_perform)
     {
         char *cwd = getcwd(NULL, 0);
-        if (cwd != NULL) 
+        if (cwd != NULL)
         {
             printf("%s>", cwd);
             free(cwd);
@@ -184,12 +338,16 @@ int sh_start()
             perror("sh_start: read command");
             continue;
         }
-        args = sh_parse_command(cmd);
+        args = sh_parse_command(&cmd);
         res_perform = sh_perfom_cmd(args);
+        free(cmd);
+        int i = 0;
+        while (args[i] != NULL)
+        {
+            free(args[i]);
+            i++;
+        }
+        free(args);
     }
-
-    int i = 0;
-    free(args);
-    free(cmd);
     return EXIT_SUCCESS;
 }
