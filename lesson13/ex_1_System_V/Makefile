@@ -1,8 +1,8 @@
 CC = gcc
 
 all: client.c server.c
-	$(CC) -o prm_client client.c
-	$(CC) -o prm_server server.c
+	$(CC) -o client_prm client.c
+	$(CC) -o server_prm server.c
 
 clean:
-	rm -f prm_client prm_server *.o
+	rm -f client_prm server_prm *.o
