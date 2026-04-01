@@ -21,7 +21,7 @@ int main()
         perror("msgget");
         exit(EXIT_FAILURE);
     }
-    
+
     msgbuffer message_out;
     strcpy(message_out.data, "Hi!\0");
     message_out.type = 10;
@@ -41,5 +41,10 @@ int main()
     }
 
     printf("Server get: %s\n", message_in.data);
+    if (msgctl(msqid, IPC_RMID, NULL) == -1) 
+    {
+        perror("msgctl");
+        exit(EXIT_FAILURE);
+    }   
     exit(EXIT_SUCCESS);
 }
