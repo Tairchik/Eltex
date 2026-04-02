@@ -1,6 +1,11 @@
 #include <ncurses.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <pthread.h>
+#include <unistd.h> 
 #include "queue.h"
 #include "client.h"
 
@@ -9,10 +14,17 @@ static int message_count = 0;
 static int chat_scroll = 0;
 
 static char clients[MAX_CLIENTS][32];
+static int clients_pids[MAX_CLIENTS] = {0};
+
 static int client_count = 0;
 static int client_scroll = 0;
 
 WINDOW *chat_win, *clients_win, *input_win;
+
+char name[MAX_NAME];
+
+int qid_server;
+int qid_client;
 
 // UI DRAW
 
@@ -173,7 +185,7 @@ void ui_loop()
         {
             if (strlen(buffer) > 0)
             {
-                ui_add_message("me", buffer);
+                send_message(buffer, name);
                 buffer[0] = 0;
                 pos = 0;
             }
@@ -226,7 +238,7 @@ void ui_loop()
 
             if (client_scroll < max_scroll)
                 client_scroll++;
-            
+
             draw_clients();
         }
 
@@ -242,16 +254,81 @@ void ui_loop()
     }
 }
 
+void connect_to_server(const char *name)
+{
+    key_t key = ftok(PATHNAME_LOGIN, PATHNAME_LOGIN_ID);
+    qid_server = msgget(key, 0666);
+    qid_client = msgget(getpid(), 0666 | IPC_CREAT);
+
+    Message msg;
+    msg.type = MSG_LOGIN;
+    msg.pid_client = getpid();
+
+    strncpy(msg.name, name, MAX_NAME);
+    msg.name[MAX_NAME - 1] = '\0';
+
+    msgsnd(qid_server, &msg, LEN_MSG, 0);
+}
+
+void send_message(const char *text, const char *name)
+{
+    Message msg;
+    msg.type = MSG_TEXT;
+    msg.pid_client = getpid();
+
+    strncpy(msg.name, name, MAX_NAME);
+    strncpy(msg.text, text, MAX_TEXT);
+
+    msgsnd(qid_server, &msg, LEN_MSG, 0);
+}
+
+void *reader_thread(void *arg)
+{
+    while (1)
+    {
+        Message msg;
+
+        if (msgrcv(qid_client, &msg, LEN_MSG, 0, 0) != -1)
+        {
+            add_new_client(msg.pid_client, msg.name);
+            if (msg.type != MSG_SERVER)
+                ui_add_message(msg.name, msg.text);
+        }
+    }
+    return NULL;
+}
+
+void add_new_client(int pid, char* name)
+{
+    int i = 0;
+    while (i < MAX_CLIENTS && clients_pids[i] != 0)
+    {
+        if (clients_pids[i] == pid)
+        {
+            return;
+        }
+        i++;
+    }
+
+    if (i != MAX_CLIENTS) 
+    {
+        clients_pids[i] = pid;
+        ui_add_client(name);
+    }
+}
+
+
 int main()
 {
+    printf("Enter name: ");
+    scanf("%s", name);
+
+    connect_to_server(name);
+
+    pthread_t tid;
+    pthread_create(&tid, NULL, reader_thread, NULL);
+
     ui_init();
-
-    ui_add_client("Alice");
-    ui_add_client("Bob");
-
-    ui_add_message("Alice", "Hello!");
-    ui_add_message("Bob", "Hi!");
-
     ui_loop();
 
     endwin();
