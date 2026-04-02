@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include "queue.h"
 
 #define CLIENTS 100
@@ -19,8 +20,10 @@ typedef struct
 
 Client clients[CLIENTS];
 Message msg_buff[MAX_MSG] = {0};
+
 int msg_count = 0;
 int client_count = 0;
+int qid_login = 0;
 
 int create_queue(const char *path, int id)
 {
@@ -67,10 +70,33 @@ int find_client(int pid)
     return -1;
 }
 
+void close_queues()
+{
+}
+
+void sigint_handler(int signo)
+{
+    (void)signo;
+    printf("\nServer shutting down...\n");
+
+    if (msgctl(qid_login, IPC_RMID, NULL) == -1)
+    {
+        perror("msgctl");
+    }
+
+    for (int i = 0; i < client_count; i++)
+    {
+        msgctl(clients[i].qid, IPC_RMID, NULL);
+    }
+
+    exit(EXIT_SUCCESS);
+}
+
 int main()
 {
-    int qid_login = create_queue(PATHNAME_LOGIN, PATHNAME_LOGIN_ID);
-
+    qid_login = create_queue(PATHNAME_LOGIN, PATHNAME_LOGIN_ID);
+    signal(SIGINT, sigint_handler);
+    
     printf("Server started\n");
 
     while (1)
