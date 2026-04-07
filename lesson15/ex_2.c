@@ -22,7 +22,6 @@ int main()
     int sig_num;
 
     sigemptyset(&set);
-    sigaddset(&set, SIGUSR1); // Для второй программы
     sigaddset(&set, SIGINT);
 
     if (sigprocmask(SIG_BLOCK, &set, NULL))
@@ -71,23 +70,7 @@ int main()
 
     while (1)
     {
-        sigwait(&set, &sig_num);
-        if (sig_num == SIGINT)
-        {
-            sem_close(semaphore1);
-            sem_unlink(SEMNAME);
-
-            munmap(ptr, sizeof(pid_t));
-            close(shm_fd);
-            shm_unlink(PATHNAME);
-
-            printf("Get signal SIGINT\n");
-            exit(EXIT_SUCCESS);
-        }
-        else if (sig_num == SIGUSR1)
-        {
-            printf("Get signal SIGUSR1\n");
-        }
+        sleep(1);
     }
 
     exit(EXIT_SUCCESS);
