@@ -65,7 +65,7 @@ int main()
     }
 
     // Создаем разделяемую пымять, чтобы отправить туда свой pid
-    int shm_fd = shm_open(PATHNAME, O_CREAT | O_RDWR, 0666);
+    shm_fd = shm_open(PATHNAME, O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1)
     {
         if (errno == ENOENT)
