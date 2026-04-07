@@ -39,11 +39,10 @@ int main()
         perror("sem_open semaphore1");
         exit(EXIT_FAILURE);
     }
-    
+
     sem_wait(semaphore1);
     kill(*ptr, SIGUSR1);
     sem_post(semaphore1);
-
 
     sem_close(semaphore1);
     close(shm_fd);
