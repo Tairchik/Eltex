@@ -16,7 +16,7 @@ int main()
 {
     struct sockaddr_un addr_serv, addr_client; 
     char buf[BUFF_SIZE];
-    int sockfd, clientfd, ret; 
+    int sockfd, ret; 
     socklen_t len;
 
     sockfd = socket(AF_LOCAL, SOCK_DGRAM, 0);                                     // Создаем сокет

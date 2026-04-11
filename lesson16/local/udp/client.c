@@ -59,7 +59,7 @@ int main()
 
     len = sizeof(struct sockaddr_un);
     /* Отправляем сообщение серверу */
-    strncpy(buf, "Hi", BUFF_SIZE - 1);
+    strncpy(buf, "Hi!", BUFF_SIZE - 1);
     if (send(sockfd, buf, BUFF_SIZE, 0) == -1)
     {
         perror("send");
