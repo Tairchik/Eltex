@@ -1,4 +1,5 @@
 #include <sys/socket.h>
+
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -18,7 +19,7 @@ int listen_server()
     1) Создаем сокет
     2) Запускаем беск. цикл
     3) Ждем запрос клиента
-    4) Создаем уникальный ендпоинт и отправляем его клиенту, клиент пытается подключится
+    4) Создаем уникальный ендпоинт и отправляем его клиенту, клиент пытается подключиться
     5) Форкаем процесс
     6) Процесс обслуживает клиента и завершается 
     */
@@ -148,7 +149,7 @@ int service_server(int port, int clientfd_listen)
         exit(EXIT_FAILURE);
     }
     
-    printf("Service server %d recive message: %s\n", getpid(), buf);
+    printf("Service server %d receive message: %s\n", getpid(), buf);
 
     close(clientfd);
     close(sockfd);
