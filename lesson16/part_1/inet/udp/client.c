@@ -52,7 +52,7 @@ int main()
         perror("recv");
         exit(EXIT_FAILURE);
     }
-    printf("Client recive message: %s\n", buf);
+    printf("Client receive message: %s\n", buf);
 
     close(sockfd);
 

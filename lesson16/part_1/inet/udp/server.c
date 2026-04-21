@@ -47,7 +47,7 @@ int main()
         exit(EXIT_FAILURE);
     }
     
-    printf("Server recive message: %s\n", buf);
+    printf("Server receive message: %s\n", buf);
 
     /* Отправляем сообщение клиенту */
     strncpy(buf, "Hello!", BUFF_SIZE);
