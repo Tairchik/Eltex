@@ -7,8 +7,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-/* В реальных приложениях указывают абсолютный путь см. Linix API 
-исчерпавающее издание гл. 53.1 "Адреса сокетов в домене UNIX: struct sockaddr_un" */
+/* В реальных приложениях указывают абсолютный путь см. Linux API 
+исчерпывающее издание гл. 53.1 "Адреса сокетов в домене UNIX: struct sockaddr_un" */
 #define SOCKET_NAME "/tmp/udp_socket"
 #define CLIENT_SOCKET_NAME "/tmp/udp_socket_client"
 #define BUFF_SIZE 64
@@ -74,7 +74,7 @@ int main()
         exit(EXIT_FAILURE);
     }
     
-    printf("Client recive message: %s\n", buf);
+    printf("Client receive message: %s\n", buf);
 
     close(sockfd);
     remove(CLIENT_SOCKET_NAME);

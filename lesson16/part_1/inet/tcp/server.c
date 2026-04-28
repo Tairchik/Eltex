@@ -63,7 +63,7 @@ int main()
         perror("recvfrom");
         exit(EXIT_FAILURE);
     }
-    printf("Server recive message: %s\n", buf);
+    printf("Server receive message: %s\n", buf);
 
     close(sockfd);
 
