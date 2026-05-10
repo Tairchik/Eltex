@@ -13,7 +13,7 @@
 int main()
 {
     struct udphdr udp, *ptr_udp;
-    struct iphdr ip, *ip_rcv; 
+    struct iphdr ip, *ip_rcv;
     struct sockaddr_in addr_serv;
     char *message_send, *message = "Hi!";
     char buf_recv[BUFSIZE];
@@ -26,7 +26,7 @@ int main()
         perror("socket");
         exit(EXIT_FAILURE);
     }
-    
+
     setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &flag, sizeof(flag));
 
     // Формируем ip заголовок
@@ -50,7 +50,7 @@ int main()
 
     memset(&addr_serv, 0, sizeof(addr_serv));
 
-    addr_serv.sin_family = AF_INET;     
+    addr_serv.sin_family = AF_INET;
     addr_serv.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     addr_serv.sin_port = htons(dest_port);
 
@@ -65,12 +65,12 @@ int main()
     memcpy(message_send, &ip, sizeof(struct iphdr));
     memcpy(message_send + sizeof(struct iphdr), &udp, sizeof(struct udphdr));
     memcpy(message_send + sizeof(struct iphdr) + sizeof(struct udphdr), message, strlen(message));
-    
+
     // Отправляем сообщение
     len = sizeof(struct sockaddr_in);
     if (sendto(sockfd, message_send, strlen(message) + sizeof(struct udphdr) + sizeof(struct iphdr), 0, (struct sockaddr *)&addr_serv, len) == -1)
     {
-        free(message_send);    
+        free(message_send);
         perror("sendto");
         exit(EXIT_FAILURE);
     }
@@ -80,27 +80,27 @@ int main()
     while (1)
     {
         len = sizeof(struct sockaddr_in);
-        if (recvfrom(sockfd, buf_recv, BUFSIZE, 0, (struct sockaddr*) &addr_serv, &len) == -1)
+        if (recvfrom(sockfd, buf_recv, BUFSIZE, 0, (struct sockaddr *)&addr_serv, &len) == -1)
         {
-            free(message_send);    
+            free(message_send);
             perror("recvfrom");
             exit(EXIT_FAILURE);
         }
 
-        ip_rcv = (struct iphdr *) buf_recv;
-        ptr_udp = (struct udphdr *) &buf_recv[ip_rcv->ihl * 4];
-        
+        ip_rcv = (struct iphdr *)buf_recv;
+        ptr_udp = (struct udphdr *)&buf_recv[ip_rcv->ihl * 4];
+
         // Проверяем наш ли это пакет
-        if (ptr_udp->source != htons(dest_port) || ptr_udp->dest != htons(src_port)) 
+        if (ptr_udp->source != htons(dest_port) || ptr_udp->dest != htons(src_port))
             // Пакет не наш
-            continue; 
+            continue;
 
         // Извлекаем сообщение
-        char *recv_msf = (char *) &buf_recv[ip_rcv->ihl * 4 + sizeof(struct udphdr)];
+        char *recv_msf = (char *)&buf_recv[ip_rcv->ihl * 4 + sizeof(struct udphdr)];
         printf("Client receive message: %s\n", recv_msf);
         break;
     }
-    
-    free(message_send); 
+
+    free(message_send);
     exit(EXIT_FAILURE);
 }
