@@ -10,7 +10,7 @@
 
 #define BUFF_SIZE 64
 #define PORT 7777
-#define SRCIP "192.168.0.52"
+#define SRCIP "192.168.0.153"
 
 int main()
 {
@@ -29,7 +29,7 @@ int main()
     memset(&addr_serv, 0, sizeof(struct sockaddr_in));
     
     addr_serv.sin_family = AF_INET;                                         
-    inet_aton(SRCIP, &addr_serv.sin_addr);
+    addr_client.sin_addr.s_addr = inet_addr(SRCIP);
     addr_serv.sin_port = htons(PORT);
 
     ret = bind(sockfd, (struct sockaddr *) &addr_serv, sizeof(addr_serv));

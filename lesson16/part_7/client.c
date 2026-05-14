@@ -13,15 +13,15 @@
 #include <unistd.h>
 
 #define BUFSIZE 14 + 20 + 8 + 128
-#define DSTMAC "00:15:5d:27:23:a2"
-#define SRCMAC "00:24:7d:c8:3A:b1"
-#define DSTIP "192.168.0.52"
+#define DSTMAC "18:c0:4d:32:6e:58"
+#define SRCMAC "04:7c:16:ad:3f:9e"
+#define DSTIP "192.168.0.153"
 #define SRCIP "192.168.0.110"
-#define NAMEINTERFACE "eth0"
+#define NAMEINTERFACE "eno1"
 #define SRCPORT 8888
 #define DSTPORT 7777
 
-uint16_t check_sum(short *ip_hdr, int len_hdr)
+uint16_t check_sum(uint16_t *ip_hdr, int len_hdr)
 {
     uint32_t csum = 0;
     for (int i = 0; i < len_hdr; i++)
@@ -84,7 +84,8 @@ int main()
     ip.protocol = IPPROTO_UDP;
     ip.saddr = inet_addr(SRCIP);
     ip.daddr = inet_addr(DSTIP);
-    ip.check = check_sum((short *)&ip, 10);
+    ip.check = 0;
+    ip.check = check_sum((uint16_t *)&ip, 10);
 
     // Формируем udp заголовок
     udp.source = htons(SRCPORT);
