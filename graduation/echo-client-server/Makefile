@@ -10,5 +10,10 @@ client: client.c client.h
 server: server.c listClient.c server.h listClient.h
 	$(CC) server.c listClient.c -o server
 
+# Не рекомендую использовать, если в системе запущены другие программы с названием ./server
+# Лучше найти PID через команду ps -ef и выполнить kill -SIGUSR1 "PID"
+kill:
+	sudo pkill -SIGUSR1 -f ./server
+
 clean:
 	rm -f server client
