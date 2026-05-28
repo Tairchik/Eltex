@@ -6,21 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include "client.h"
+#include "server.h"
 
+#define CLIENTPORT 5432
+#define CLEINTIP "127.0.0.1"
 
-int safe_atoi(const char *num)
-{
-    int res = atoi(num);
-    if (res <= 1023 || res > 65535)
-    {
-        fprintf(stderr, "Invalid port range\n");
-        exit(EXIT_FAILURE);
-    }
-    return res;
-}
-
-int main(int argc, char *argv[])
+int main()
 {
     struct udphdr udp, *udp_rcv;
     struct iphdr *ip_rcv;
@@ -28,29 +19,6 @@ int main(int argc, char *argv[])
     char message[MSGSIZE], *data, *message_send, message_rcv[BUFSIZE];
     socklen_t len;
     int sockfd, ret;
-    int portS, portC;
-    char *ipS = NULL, *ipC = NULL;
-
-    if (argc != 5 && argc != 3 || strcmp(argv[1], "--help") == 0)
-    {
-        printf("Format: [CLIENT ADDRESS] [CLIENT PORT] [SERVER ADDRESS] [SERVER PORT]\n\tor\n[CLIENT PORT] [SERVER PORT] to use loopback interface\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (argc == 3)
-    {
-        ipC = "127.0.0.1";
-        portC = safe_atoi(argv[1]);
-        ipS = "127.0.0.1";
-        portS = safe_atoi(argv[2]);
-    }
-    else if (argc == 5)
-    {
-        ipC = argv[1];
-        portC = safe_atoi(argv[2]);
-        ipS = argv[3];
-        portS = safe_atoi(argv[4]);
-    }
 
     sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP);
     if (sockfd == -1)
@@ -62,8 +30,8 @@ int main(int argc, char *argv[])
     memset(&addr_serv, 0, sizeof(struct sockaddr_in));
 
     addr_serv.sin_family = AF_INET;
-    addr_serv.sin_port = htons(portS);
-    if (inet_aton(ipS, &addr_serv.sin_addr) == 0)
+    addr_serv.sin_port = htons(SERVERPORT);
+    if (inet_aton(SERVERIP, &addr_serv.sin_addr) == 0)
     {
         perror("inet_aton");
         exit(EXIT_FAILURE);
@@ -76,8 +44,8 @@ int main(int argc, char *argv[])
 
         message[strcspn(message, "\r\n")] = '\0';
         // Формируем udp заголовок
-        udp.source = htons(portC);
-        udp.dest = htons(portS);
+        udp.source = htons(CLIENTPORT);
+        udp.dest = htons(SERVERPORT);
         udp.check = 0;
         udp.len = htons(8 + strlen(message));
 
@@ -117,7 +85,7 @@ int main(int argc, char *argv[])
             udp_rcv = (struct udphdr *)&message_rcv[ip_rcv->ihl * 4];
             data = &message_rcv[ip_rcv->ihl * 4 + sizeof(struct udphdr)];
 
-            if (udp_rcv->dest != htons(portC))
+            if (udp_rcv->dest != htons(CLIENTPORT))
                 // Пакет не наш
                 continue;
 
