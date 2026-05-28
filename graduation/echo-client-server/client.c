@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
 
     if (argc != 5 && argc != 3 || strcmp(argv[1], "--help") == 0)
     {
-        printf("Format: [CLIENT ADDRESS] [CLIENT PORT] [SERVER ADDRESS] [SERVER PORT]\n\tor\n[CLIENT PORT] [SERVER PORT] to use loopback interface\n");
+        fprintf(stderr, "Usage: %s [CLIENT ADDRESS] [CLIENT PORT] [SERVER ADDRESS] [SERVER PORT]\n\tor\n[CLIENT PORT] [SERVER PORT] to use loopback interface\n", argv[0]);
+        fprintf(stderr, "If you want to exit the client, write \"exit\"\n");
         exit(EXIT_FAILURE);
     }
 
@@ -102,6 +103,11 @@ int main(int argc, char *argv[])
         }
         printf("Client send message: %s\n", &message_send[sizeof(struct udphdr)]);
 
+        if (strcmp(message, "exit") == 0)
+        {
+            free(message_send);
+            exit(EXIT_SUCCESS);
+        }
         // Принимаем сообщение
         while (1)
         {

@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
     if ((argc != 3 && argc != 2) || (argc > 1 && strcmp(argv[1], "--help") == 0))
     {
-        printf("Format: [SERVER ADDRESS] [SERVER PORT]\n\tor\n[SERVER PORT] to use loopback interface\n");
+        fprintf(stderr, "Usage: %s [SERVER ADDRESS] [SERVER PORT]\n\tor\n[SERVER PORT] to use loopback interface\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -102,7 +102,13 @@ int main(int argc, char *argv[])
         client.ip = ip_rcv->saddr;
         client.port = udp_rcv->source;
         client.count = 1;
-
+        
+        if (strcmp(data, "exit") == 0)
+        {
+            removeClient(&list, client);
+            continue;
+        }
+   
         client_ptr = addClient(list, client);
 
         // Изменяем строку

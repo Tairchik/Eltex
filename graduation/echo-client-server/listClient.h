@@ -17,5 +17,7 @@ struct listClient
 struct listClient* createList();
 // Добавить клиента в список и вернуть указатель. Если клиент существует, то вернуть указатель на него в списке. 
 struct client* addClient(struct listClient *list, struct client client);
+// Удалить клиента
+int removeClient(struct listClient **list, struct client client);
 // Освобождение памяти
 void freeListClient(struct listClient *list);
