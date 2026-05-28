@@ -1,4 +1,0 @@
-#define SERVERIP  "127.0.0.1"
-#define SERVERPORT 7777
-#define BUFSIZE 1500
-#define MSGSIZE BUFSIZE - 20 - 8
