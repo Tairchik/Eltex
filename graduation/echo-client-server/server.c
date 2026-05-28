@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <errno.h>
 #include <malloc.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -7,8 +8,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <signal.h>
 #include "server.h"
 #include "listClient.h"
+
+volatile uint8_t keep_running = 1;
+
+void sig_handler(int sig_num, siginfo_t *info, void *args)
+{
+    if (sig_num == SIGUSR1) 
+    {
+        keep_running = 0;
+    }
+}
 
 int safe_atoi(const char *num)
 {
@@ -29,10 +41,25 @@ int main(int argc, char *argv[])
     struct listClient *list;
     struct client client, *client_ptr;
     char message[BUFSIZE], *data, *message_send, str_count[20];
+    char data_buffer[MSGSIZE + 32];
     socklen_t len;
     int sockfd, ret, count = 1;
     int portS;
     char *ipS = NULL;
+    struct sigaction handler;
+    sigset_t set;
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR1);
+
+    handler.sa_sigaction = sig_handler;
+    handler.sa_mask = set;
+    
+    if (sigaction(SIGUSR1, &handler, NULL) < 0)
+    {
+        perror("sigaction SIGUSR1");
+        exit(EXIT_FAILURE);
+    }
 
     if ((argc != 3 && argc != 2) || (argc > 1 && strcmp(argv[1], "--help") == 0))
     {
@@ -80,11 +107,15 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    while (1)
+    while (keep_running)
     {
         len = sizeof(struct sockaddr_in);
         if (recvfrom(sockfd, message, BUFSIZE, 0, (struct sockaddr *)&addr_client, &len) == -1)
         {
+            if (errno == EINTR) 
+            {
+                continue; 
+            }
             perror("recvfrom");
             exit(EXIT_FAILURE);
         }
@@ -112,17 +143,23 @@ int main(int argc, char *argv[])
         client_ptr = addClient(list, client);
 
         // Изменяем строку
-        sprintf(str_count, " %d", client_ptr->count);
-        strncat(data, str_count, sizeof(data));
+        
+        snprintf(data_buffer, sizeof(data_buffer), "%s %d", data, client_ptr->count);
+        printf("New string: %s.\n", data_buffer);
 
-        printf("New string: %s.\n", data);
+        if (strlen(data_buffer) + 1 > 1472)
+        {
+            fprintf(stderr, "Warning: response is too long (%zu bytes).\n", strlen(data_buffer));
+            client_ptr->count++;
+            snprintf(data_buffer, sizeof(data_buffer), "Server warning: response is too long.");
+        }
 
         udp.check = 0;
         udp.dest = udp_rcv->source;
         udp.source = htons(portS);
-        udp.len = htons(8 + strlen(data) + 1);
+        udp.len = htons(sizeof(struct udphdr) + strlen(data_buffer) + 1);
 
-        message_send = malloc(strlen(data) + 1 + sizeof(struct udphdr));
+        message_send = malloc(strlen(data_buffer) + 1 + sizeof(struct udphdr));
 
         if (message_send == NULL)
         {
@@ -131,10 +168,10 @@ int main(int argc, char *argv[])
         }
 
         memcpy(message_send, &udp, sizeof(struct udphdr));
-        memcpy(message_send + sizeof(struct udphdr), data, strlen(data) + 1);
+        memcpy(message_send + sizeof(struct udphdr), data_buffer, strlen(data_buffer) + 1);
 
         len = sizeof(struct sockaddr_in);
-        if (sendto(sockfd, message_send, strlen(data) + sizeof(struct udphdr) + 1, 0, (struct sockaddr *)&addr_client, len) == -1)
+        if (sendto(sockfd, message_send, strlen(data_buffer) + sizeof(struct udphdr) + 1, 0, (struct sockaddr *)&addr_client, len) == -1)
         {
             free(message_send);
             perror("sendto");
