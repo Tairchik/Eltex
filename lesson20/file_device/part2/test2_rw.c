@@ -1,8 +1,8 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/fs.h>
-#include <linux/mutex.h>      // вместо rwlock.h
-#include <linux/uaccess.h>    // опционально, simple_read_from_buffer уже в fs.h
+#include <linux/mutex.h>  
+#include <linux/uaccess.h>    
 
 static int major = 0;
 static DEFINE_MUTEX(lock);    // замена rwlock_t на mutex
